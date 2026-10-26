@@ -68,4 +68,35 @@ After the fix, ruff reports `All checks passed!` on all our files.
 
 ## 5. My own receipts
 
-*To be recorded.*
+Two phone photos from Bradley Airport, September 25, in `my-receipts/`. Card numbers, account numbers and auth codes are blacked out, and the photos were re-saved without EXIF data, so no location is embedded. The expected values in `my-receipts/expected.json` are mine, read off the paper.
+- `airport-snacks.jpg`: Paradies Lagardere - BDL, three lines (cashew cluster 9.99, Poland Spring 4.69, a 0.10 bottle deposit), subtotal 14.78, tax 0.63, total 15.41. The receipt is **upside down** in the photo.
+- `airport-shawarma.jpg`: one item (29.85), tax 1.79, total 31.64. It prints **no store name and no date** at all, only printer codes like "ta1".
+
+`RECEIPT_DIR=my-receipts python eval.py`:
+
+**`xiaomi/mimo-v2.6-flash`**
+
+| Receipt | Total | Items | Merchant (word set / strict) | Date | Checker | Tokens in / out |
+|---|---|---|---|---|---|---|
+| airport-snacks.jpg | pass | pass | **FAIL** (Paradise Luggage - BDL) / FAIL | **FAIL** (2025-09-25) | clean | 3092 / 185 |
+| airport-shawarma.jpg | pass | pass | **FAIL** (ta1) / FAIL | pass | clean | 3092 / 85 |
+
+7 of 10 checks passed. 2 model calls.
+
+**`minimax/minimax-m3`**
+
+| Receipt | Total | Items | Merchant (word set / strict) | Date | Checker | Tokens in / out |
+|---|---|---|---|---|---|---|
+| airport-snacks.jpg | pass | pass | pass / pass | pass | items add up to $11.78 but the subtotal is $14.78 (off by $3.00) | 4233 / 260 |
+| airport-shawarma.jpg | pass | pass | **FAIL** () / pass | pass | clean | 4233 / 886 |
+
+8 of 10 checks passed. 2 model calls.
+
+**What went wrong, and whether the checker caught it:**
+- **minimax misread a price, and the checker caught it.** On the upside-down receipt it read the cashew cluster's 9.99 as **6.99**, while still reading the subtotal and total correctly. The total test passes, so a total-only check would have accepted this receipt. The arithmetic check flagged it: "items add up to $11.78 but the subtotal is $14.78 (off by $3.00)". This is the case the checker exists for.
+- **mimo misread the upside-down store name** as "Paradise Luggage - BDL", and in this run read the year as 2025 (an earlier run of the pytest eval read 2026). Model misread. The checker cannot catch this, because names and dates are not arithmetic.
+- **mimo invented a store name for the shawarma receipt:** it returned "ta1", a printer control code, where no name is printed. Model misread.
+- **minimax returned an empty name for the shawarma receipt, which is correct, but the word-set compare still says FAIL.** This is a spec gap, not a misread. Behavior 13 says names match on the same set of words, and `same_merchant` was written so that an empty name never matches. Nothing in the spec covers a receipt that prints no name. The strict compare says pass. The fix would be a spec change (two empty names match, or the merchant becomes nullable); it is not made here, so the gap stays visible.
+- **The same receipt made minimax use up its output budget once.** In a separate `receipts.py` run on `airport-shawarma.jpg` it returned no content with `finish_reason: length`. The program printed `Failed read: the model used its whole output budget before answering (finish_reason: length)` and exited 1, which is behavior 4 working on a real reply.
+- **Real photos cost far more input tokens:** about 3,100 (mimo) and 4,200 (minimax) per photo, against about 560 and 880 for the course's small PNGs, because the photos are 1500×2000.
+- **Runs are not repeatable:** mimo's date on the snacks receipt changed between two runs, at temperature 0.

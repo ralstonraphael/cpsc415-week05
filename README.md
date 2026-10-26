@@ -48,7 +48,13 @@ Both models read every total, item count, merchant and date correctly, and every
 
 ## My own receipts
 
-*To be filled in after the run.*
+Two phone photos from Bradley Airport, in `my-receipts/`, with card details blacked out and no EXIF data. One is upside down; the other prints no store name and no date. `RECEIPT_DIR=my-receipts python eval.py`: mimo passed 7 of 10 checks, minimax 8 of 10.
+
+- **The checker paid off:** minimax read a $9.99 item as $6.99 but got the total right. A total-only check would have passed it; the checker reported "items add up to $11.78 but the subtotal is $14.78 (off by $3.00)".
+- **Misreads the checker can't catch:** mimo misread the upside-down store name as "Paradise Luggage", and invented the name "ta1" from a printer code. Names aren't arithmetic.
+- **A spec gap:** minimax correctly returned an empty name for the receipt with none, but our merchant compare never matches an empty name.
+
+Details in [`CHECKS.md`](CHECKS.md) section 5.
 
 ## One line I can explain
 

@@ -1,0 +1,14 @@
+{
+  "airport-snacks.jpg": {
+    "merchant": "Paradies Lagardere - BDL",
+    "date": "2026-09-25",
+    "items": 3,
+    "total": 15.41
+  },
+  "airport-shawarma.jpg": {
+    "merchant": "",
+    "date": null,
+    "items": 1,
+    "total": 31.64
+  }
+}
