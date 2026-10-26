@@ -4,7 +4,6 @@ import base64
 import json
 import os
 import re
-import socket
 import urllib.error
 import urllib.request
 from datetime import date as _date
@@ -195,7 +194,7 @@ def post_json(url, body, headers, timeout):
 
 def _is_timeout(exc):
     inner = exc.reason if isinstance(exc, urllib.error.URLError) else exc
-    return isinstance(inner, (socket.timeout, TimeoutError))
+    return isinstance(inner, TimeoutError)  # socket.timeout is the same class
 
 
 def read_receipt(image_path, model=None):
@@ -216,7 +215,7 @@ def read_receipt(image_path, model=None):
         except (ValueError, KeyError, TypeError):
             pass
         return ReadFailure(f"HTTP {exc.code}: {message}", model=model)
-    except (TimeoutError, socket.timeout, urllib.error.URLError) as exc:
+    except (TimeoutError, urllib.error.URLError) as exc:
         if _is_timeout(exc):
             return ReadFailure(f"the model did not answer within {TIMEOUT_S} s", model=model)
         return ReadFailure(f"could not reach the endpoint: {exc}", model=model)
