@@ -4,20 +4,20 @@
      Graded: does it reflect how the team actually works? -->
 
 ## What this repository is
-One paragraph. Link to the current `spec.md`.
+The Week 5 lab: a command-line receipt reader. A vision model reads a receipt photo into JSON, and plain code checks the arithmetic. See [`spec.md`](spec.md).
 
 ## Commands
 ```
-# build
-# test
-# run
-# lint
+# build   python3.12 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
+# test    .venv/bin/python -m pytest -m "not eval"   (no key)   |   -m eval   (needs OPENROUTER_API_KEY)
+# run     .venv/bin/python receipts.py images/receipt-01.png
+# lint    uvx ruff check .
 ```
 
 ## Conventions
-- Language and style rules the agent must follow.
-- Where tests live and how they are named.
-- Branch and PR naming.
+- Python 3.12, standard library only in the program; pytest for tests.
+- Tests in `tests/test_<module>.py`, written and committed before the code they test.
+- No branches or pull requests this week (see Working rules).
 
 ## Working rules
 

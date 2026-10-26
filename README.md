@@ -1,45 +1,59 @@
-# Artifact-chain template
+# Week 5: Receipts to data, with tests
 
-Starting point for major project submissions in CPSC 415 (AI Integration, Trinity College). Click **Use this template** on GitHub to create your own repository from it. Do not fork.
+CPSC 415, Ralston Raphael. A command-line program that reads a photo of a receipt with a vision model and returns JSON. Plain code then checks that the items add up to the subtotal and that subtotal − discount + tax is the total. The model reads; our code decides whether the numbers add up.
 
-The course follows Anthropic's [AI-Native SDLC Playbook](https://claude.com/blog/the-ai-native-sdlc-playbook): every stage of the work leaves a short, version-controlled artifact. The agent writes most of the code. You decide what gets built, steer, verify, and explain every choice. These files are how you prove you understood what the agent built.
+The chain: [`intent/receipts.md`](intent/receipts.md) → [`spec.md`](spec.md) → [`plan.md`](plan.md) → tests and code → [`CHECKS.md`](CHECKS.md).
 
-## Early labs
+## Run it
 
-Week 1 uses the minimal repository described in the course handout. Later introductory labs complete only the stages assigned so far. This template describes the full chain for team projects and the final portfolio; it does not require unintroduced artifacts in Week 1. Project languages are chosen and justified, with one separate guided exercise in an unfamiliar language.
+Python 3.12. The program uses only the standard library; the tests need pytest.
 
-## The chain
+```bash
+python3.12 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
+export OPENROUTER_API_KEY=<your key>          # never committed
+.venv/bin/python receipts.py images/receipt-01.png
+```
 
-| Stage | File | Written by | Approved by |
+| Variable | Meaning | Default |
+|---|---|---|
+| `OPENROUTER_API_KEY` | needed for the program and the eval | none |
+| `CHAT_MODEL` | which vision model reads the receipt | `xiaomi/mimo-v2.6-flash` |
+| `CHAT_REASONING` | `on` or `off`, overrides the per-model table | mimo off, others on |
+| `CHAT_BASE_URL` | the chat endpoint | `https://openrouter.ai/api/v1` |
+| `RECEIPT_DIR` | the folder the eval reads, with its `expected.json` | `images` |
+
+## Tests
+
+```bash
+.venv/bin/python -m pytest -m "not eval"   # 69 tests, no key, no network
+.venv/bin/python -m pytest -m eval -v      # the eval: needs the key, skipped without it
+.venv/bin/python eval.py                   # the eval as a table with tokens
+```
+
+- **No key needed:** the checker, the reply parsing, the request body and the command line, all on hand-written inputs. They prove the code handles every reply shape and every arithmetic case. They say nothing about whether a model can read a receipt.
+- **Key needed (the eval):** reads each image once and compares it with `images/expected.json`: the total, the number of items, the merchant, the date, and a clean checker.
+
+## Two models
+
+| Model | Checks passed | Tokens in / out (5 receipts) | About per receipt |
 |---|---|---|---|
-| Plan | `intent/<name>.md` | The agent, after interviewing you | You |
-| Design | `spec.md` | The agent, from the approved intent | You, against the intent |
-| Build | `plan.md`, then code on a branch | The agent | You, before any code |
-| Test | tests, lint, CI | The agent | You confirm the loop actually ran |
-| Deploy | a pull request reviewed against `REVIEW.md` | A separate reviewing agent | You merge |
-| Maintain | a new `intent/<name>.md` | Triggered by a bug, a ticket, or a model change | You triage |
+| `xiaomi/mimo-v2.6-flash` (default, reasoning off) | 25 / 25 | 2,876 / 881 | $0.00013 |
+| `minimax/minimax-m3` (reasoning on) | 25 / 25 | 4,433 / 1,499 | $0.0006 |
 
-`CLAUDE.md` and `REVIEW.md` travel with the repo and are graded artifacts.
+Both models read every total, item count, merchant and date correctly, and every receipt's arithmetic held. They differed in cost: minimax spent about 1.5× the input and 1.7× the output tokens, partly on hidden reasoning, so mimo is the default. Full per-receipt tables are in [`CHECKS.md`](CHECKS.md).
 
-## Rules that are graded
+## Step 4: when a test disagreed with the answer key
 
-- Intent and spec exist before code. Plan is approved before implementation. The commit history shows it.
-- One pull request per feature, from a branch, reviewed before merge. Do not commit to `main` directly after the first commit.
-- `spec.md` states the **language** and the **model** for each component and why.
-- `ANNOTATION.md` answers the four questions for the finished project.
-- No secrets in the repo. `.claude/settings.local.json` and `.env` are ignored; the `.example` file shows the shape.
+*To be filled in after the run.*
 
-## Submitting
+## My own receipts
 
-Tag the commit you are submitting and put the repository URL plus the tag on Moodle:
+*To be filled in after the run.*
 
-```
-git tag tp1-submitted
-git push origin tp1-submitted
+## One line I can explain
+
+```python
+expected = subtotal - cents(receipt.discount) + cents(receipt.tax)
 ```
 
-Tags the course uses: `intent-spec`, `tp1-submitted`, `tp2-submitted`, `portfolio-final`.
-
-## Running the agent
-
-Copy `.claude/settings.local.json.example` to `.claude/settings.local.json` and fill in your OpenRouter key and model slugs, or use the `orclaude` launcher from the [course repository](https://github.com/kousen/ai-integration-course/tree/main/scripts).
+From `checker.py`. Every amount has already been turned into whole cents with `round(x * 100)`, so this is integer arithmetic and 0.1 + 0.2 cannot come out as 0.30000000000000004. The discount is stored as a positive number, so it is subtracted. If `expected` differs from the printed total, even by one cent, the checker reports both amounts and the difference instead of trusting the model.
