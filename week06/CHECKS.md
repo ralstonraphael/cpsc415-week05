@@ -74,4 +74,25 @@ The narrow title question, compared in code, was the only check that caught the 
 
 ## Review
 
-_Pending: the Team Project 1 pull request (branch `week06-ralston`)._
+**PR:** https://github.com/javieromolopez/TP1/pull/18 (branch `week06-ralston` to `main`, 12 commits, tests before code). Javier's #10 and #14 had already merged the FLUX set and `app/checker.py`, so this PR builds on them: a **label text check in code** (`app/label_check.py`). The critic model transcribes every label, and `checker.build_report` compares the list with the topic's `labels`. A misread label turns `good` into `needs_work`. It also adds the page rows, my five images in `images/earth-space/` with both critiques, and the guard. Gate (`gate.sh` as pre-push: `uvx ruff check .` plus the no-key tests) passed on all four pushes; 189 tests at the end.
+
+**Reviewer** (`examples/pr-review/review.py` against `REVIEW.md` + `spec.md`):
+
+- The full diff was 87,830 characters, over the 60,000 limit (exit 2). The critics' raw JSON in `images/earth-space/` is most of it. Every run reviewed the code diff with `images/earth-space/` excluded (about 29,000 characters). It is model output and data, not code, and the PR comment says so.
+- `minimax/minimax-m3` exited **2** twice ($0.0068, $0.0099): it spent its 2,000 output tokens on hidden reasoning and returned no findings and no NONE. The gate stayed closed, which is correct: silence is not approval. The reviews below are `xiaomi/mimo-v2.6-flash`.
+
+| Run | Exit | Pass 1 | Pass 2 | Pass 3 | Pass 4 | Cost |
+|---|---|---|---|---|---|---|
+| 1 | 1 | behavior-5 test "dropped" | the no-label-read test "passes vacuously"; a malformed reply crashes the request | unavailable row shown in red | guard docstring | $0.00212 |
+| 2 | 1 | none | no `runs.jsonl` line for the label read | the wrong-shape read is not tested through the API | the unavailable row again | $0.00213 |
+| 3 | **0** | none | none | none | none | $0.00206 |
+
+**Fixed:** a malformed label reply (no `choices`) raised `KeyError` and failed `/api/generate`. That was real. The fix was tests-first, and the failure is now reported as a failed check (run 1, pass 2). Also added: the wrong-shape read through the API (run 2, pass 3), a test proving the label read is logged, and plainer wording on the unavailable row.
+
+**Pushed back on:** the dropped behavior-5 test. It is in `tests/test_critic.py`, untouched; the reviewer only saw the diff. The "vacuous" test: image, critique and retry are 3 calls, so a fourth label read would fail it. The missing log line: `openrouter.chat` logs every call, and now a test shows it for the label read. Red for "not checked": a check that didn't run should stand out. The guard docstring: kept identical to the course file. Every reply is on the PR, one comment per run.
+
+**Last exit code:** 0 (run 3, at `3ef2ff8`).
+
+**Approved by:** _pending: Javier Romo (code owner) reviews and approves #18 on GitHub, then `gh pr merge 18 --merge`._ The lab allows submitting the PR URL before the merge.
+
+**Also found:** `review.py` hard-codes `max_tokens=2000`. That is enough for mimo with reasoning off, but too little for minimax-m3 with reasoning on, on a 14,000-token review. The same failure happened in the open-ended critique above. A reviewer that defaults to a model that cannot finish is a gate that is always closed.
