@@ -63,3 +63,46 @@ On their own, these prove our code handles every reply shape and every arithmeti
 Steps 2 and 3 run in parallel as two Sonnet subagents, one for the checker and one for the reader. Each owns only its own files and writes the tests first. Each runs them red, writes the code, runs them green, and returns both outputs. Neither one commits. The main session reviews each diff and commits the tests and then the code, in that order, so the history shows tests before code. It also replays the red run at commit time. Everything else stays in the main session, because each step needs the one before it.
 
 **Approved by:** Ralston Raphael, October 25, 2026
+
+## Week 6
+
+Implements the "Week 6: image set" section of [`spec.md`](spec.md).
+
+### Files
+
+- `week06/critique.py`: the checker functions (`extract_json`, `check`, `text_matches`, `disagreements`) and the billed critique run.
+- `week06/generate.py`: the Image API run and `manifest.json`.
+- `week06/tests/test_checker.py`, `week06/tests/conftest.py`: no-key tests.
+- `week06/prompts.json`: five prompts, seeds 501–505, requirements, expected titles.
+- `week06/images/`: five images and `manifest.json`. `week06/images-seed/`: the seed re-run. `week06/images-nb/`: the comparison model.
+- `week06/critique.json`, `week06/critique-mimo.json`: both critics.
+- `week06/CHECKS.md`.
+
+### Order of work
+
+1. Working rules, then intent, then this spec section and plan, approved in that order.
+2. Checker tests (red), then the checker (green). Lint with ruff.
+3. `prompts.json`, then the generator, then five images.
+4. Critiques on minimax, then mimo, then `--compare`. Look at each disagreement.
+5. Seed re-run and comparison model.
+6. CHECKS.md, then the Team Project 1 pull request (in the team repository), then the Review section here and the tag.
+
+### Risks
+
+- **The critic says a requirement is unmet when it is met, or the reverse.** No test can notice that from one model. The second critic (`--compare`) and my own look at every disagreement are the check, recorded in `CHECKS.md`.
+- **The title is misread or "corrected" by the critic** (the course notes say mimo silently fixed a misspelled title). The narrow read is compared in code, and I read each title letter by letter myself before reading the critiques.
+- **Running the eval in a loop by mistake** would bill about $0.15 per loop. The scripts make one call per prompt or image and are run by hand. No test calls a model.
+- **Seed:** the same model, prompt, and seed should give the same picture, but the course found different JPEG bytes for the same picture. I record both what I see and what `cmp` says.
+
+### Proof
+
+- **No-key tests** (`.venv/bin/python -m pytest week06/tests -v`, free, under a second): all met; one unmet, named; one unanswered; one invented; loose requirement matching; not JSON; JSON in prose and fences; the title comparison ("Volcano Cross-Section" vs "Volcano Cross-Sectoin"); two critics disagreeing, and identical files agreeing (behaviors 14–22). They prove the code's decisions on replies I wrote. They prove nothing about the models.
+- **Billed eval** (by hand, once): five generations, five critiques on each of two models with title reads, one seed re-run, one comparison image. **About $0.15.** It proves what the models actually drew and said, checked against my own eyes.
+
+### Questions asked before approval
+
+- **"If the critic says a requirement is unmet and it is actually met, which test notices?"** None of the no-key tests can, because they never see the image. The second critic and my look at each disagreement are what notice it, and `CHECKS.md` records what I saw.
+- **"What does one run of the eval cost, and what happens if I run it in a loop by mistake?"** About $0.15 for everything, about $0.09 for the five images and ten critiques alone. A loop would repeat that per pass. Nothing loops: the scripts are run by hand and no test calls a model. *Correction from this answer:* the generator prints the running total after each image, so a runaway run is visible at once.
+- **"What does the same seed guarantee, and how would I check that?"** The same picture for the same model and prompt, not necessarily the same bytes. I check by looking at both and by `cmp`, and record both answers.
+
+**Approved by:** Ralston Raphael, November 9, 2026
