@@ -1,0 +1,50 @@
+[
+  {
+    "name": "volcano",
+    "model": "minimax/minimax-m3",
+    "critique": {
+      "checks": [
+        {
+          "requirement": "The volcano is shown cut in half as a cross-section",
+          "met": true,
+          "evidence": "The volcano\u2019s front is cut away to reveal its internal layers and passageways."
+        },
+        {
+          "requirement": "A magma chamber is shown below the volcano",
+          "met": true,
+          "evidence": "A large orange magma chamber is visible beneath the volcano and labeled as such."
+        },
+        {
+          "requirement": "A vent connects the magma chamber to the top",
+          "met": true,
+          "evidence": "A central vertical passage connects the magma chamber to the summit."
+        },
+        {
+          "requirement": "Lava is shown coming out of the volcano",
+          "met": true,
+          "evidence": "Red lava is visible at the summit and flowing down the right side."
+        }
+      ]
+    },
+    "raw": "\n\n{\"checks\":[{\"requirement\":\"The volcano is shown cut in half as a cross-section\",\"met\":true,\"evidence\":\"The volcano\u2019s front is cut away to reveal its internal layers and passageways.\"},{\"requirement\":\"A magma chamber is shown below the volcano\",\"met\":true,\"evidence\":\"A large orange magma chamber is visible beneath the volcano and labeled as such.\"},{\"requirement\":\"A vent connects the magma chamber to the top\",\"met\":true,\"evidence\":\"A central vertical passage connects the magma chamber to the summit.\"},{\"requirement\":\"Lava is shown coming out of the volcano\",\"met\":true,\"evidence\":\"Red lava is visible at the summit and flowing down the right side.\"}]}",
+    "usage": {
+      "in": 1764,
+      "out": 362,
+      "finish": "stop"
+    },
+    "check": {
+      "ok": true,
+      "problems": [],
+      "unmet": [],
+      "missing": [],
+      "extra": []
+    },
+    "text_read": "VOLCANO CROSS-SECTION",
+    "text_matches": true,
+    "usage_text": {
+      "in": 777,
+      "out": 55,
+      "finish": "stop"
+    }
+  }
+]

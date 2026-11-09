@@ -1,0 +1,14 @@
+[
+  {
+    "name": "volcano",
+    "prompt": "Flat-color 2D textbook illustration for a middle-school science class, white background, solid color fills, clean labels in clear text with arrows pointing to each part. A volcano cut in half showing the magma chamber, the vent, the crater, and lava flowing down the side, each part labeled. The title \"Volcano Cross-Section\" is large and clearly legible at the top.",
+    "seed": 503,
+    "requirements": [
+      "The volcano is shown cut in half as a cross-section",
+      "A magma chamber is shown below the volcano",
+      "A vent connects the magma chamber to the top",
+      "Lava is shown coming out of the volcano"
+    ],
+    "expected_text": "Volcano Cross-Section"
+  }
+]
