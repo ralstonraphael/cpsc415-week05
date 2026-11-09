@@ -93,3 +93,44 @@ Ruled out by this design:
 - Using `response_format` JSON mode as the only defense. It may be tried as an extra, but the parser must handle prose and fences either way.
 
 **Approved by:** Ralston Raphael, October 25, 2026
+
+## Week 6: image set
+
+Implements [`intent/image-set.md`](intent/image-set.md). Lives in `week06/`. Five Earth and space diagrams (The Solar System, Layers of the Earth, Volcano Cross-Section, Phases of the Moon, The Rock Cycle), one prompt family, fixed seeds, in `week06/prompts.json`.
+
+### Generator
+
+- **What it does:** One Image API call (`POST /api/v1/images`) per prompt. It saves each image and writes `images/manifest.json` with, per image: name, prompt, seed, requirements, expected text, model, aspect ratio, file, media type, the cost from the reply's `usage.cost`, and seconds.
+- **Language:** Python 3.12, the same as Week 5. **Why:** the course example (`examples/image-set/`) is Python, and the `openrouter` SDK wraps the Image API, so there is one request shape to learn and nothing hand-built.
+- **Model:** default `black-forest-labs/flux.2-klein-4b` (about $0.014 per image on October 19; cheap enough for five plus a re-run). Comparison: `google/gemini-3.1-flash-lite-image` on one prompt (about $0.03–0.04, priced per image token), to see whether a second model meets the same requirements and spells the same title.
+
+### Critic and checker
+
+- **What it does:** Sends each image with its yes/no checklist (one item per requirement, copied exactly) to a vision model through the chat endpoint, the Week 5 request. It asks for one JSON object and parses it. Then plain code compares the checklist with the requirements. A second, narrow question asks for the largest text exactly as printed, and code compares that with `expected_text`. With `--compare`, it lists where two critique files disagree. That part needs no key.
+- **Language:** Python 3.12, the same file layout as the example.
+- **Model:** the critic is `minimax/minimax-m3` (the class vision model; reasoning on). The second model used to check it is `xiaomi/mimo-v2.6-flash` (reasoning off, `{"effort": "none"}` through the SDK). A disagreement between them is the signal for a person to look.
+
+### Dependencies (Week 6)
+
+| Package | Used for | Why |
+|---|---|---|
+| openrouter | the Image API call and the vision chat calls in `week06/generate.py` and `week06/critique.py` | The SDK carries both request shapes (`client.images.generate`, `client.chat.send`) and returns `usage.cost`, so the manifest records what each image cost without a second lookup. Imported only on the billed path, so the no-key tests and the program's no-key exit never need it. |
+
+### Behavior (Week 6)
+
+14. A critique that is not JSON, or is JSON of the wrong shape, is a failed critique: every requirement counts as unanswered, and the program goes on to the next image. It never crashes.
+15. JSON inside prose or a ```json fence is extracted and used.
+16. A requirement the critic did not answer counts as a problem, even when every other one is met.
+17. An item the critic answered that was not in the checklist (an invented requirement) counts as a problem.
+18. A requirement reported unmet is named in the result.
+19. Requirement text is matched ignoring case and punctuation, so "the sun is shown." answers "The Sun is shown".
+20. The expected title is compared in code with the critic's narrow read, ignoring case and punctuation. "Volcano Cross-Section" against "Volcano Cross-Sectoin" is a mismatch. The critic is never asked whether the title is right.
+21. An image passes only when the checklist has no problems and the title matches.
+22. `--compare` lists every image and requirement where two critique files differ, including the title read. Identical files give no disagreements.
+23. Without `OPENROUTER_API_KEY`, `generate.py` and `critique.py` exit 1 with one line saying so, and send nothing.
+
+### Cost estimate (Week 6)
+
+Five FLUX images about $0.07; one seed re-run about $0.014; one comparison image about $0.04. Ten critiques (five per model) plus ten title reads: under $0.02. **The whole Week 6 eval: about $0.15.**
+
+**Approved by:** Ralston Raphael, November 9, 2026
